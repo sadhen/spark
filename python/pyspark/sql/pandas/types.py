@@ -74,7 +74,7 @@ def to_arrow_type(dt):
         arrow_type = pa.struct(fields)
     elif type(dt) == NullType:
         arrow_type = pa.null()
-    elif isinstance(dt, UserDefinedType):
+    elif type(dt) == UserDefinedType:
         arrow_type = to_arrow_type(dt.sqlType())
     else:
         raise TypeError("Unsupported type in conversion to Arrow: " + str(dt))
