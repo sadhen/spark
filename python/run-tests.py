@@ -135,6 +135,9 @@ def run_individual_python_test(target_dir, test_name, pyspark_python):
     else:
         skipped_counts = 0
         try:
+            with open(LOG_FILE, 'ab') as log_file:
+                per_test_output.seek(0)
+                log_file.writelines(per_test_output)
             per_test_output.seek(0)
             # Here expects skipped test output from unittest when verbosity level is
             # 2 (or --verbose option is enabled).
