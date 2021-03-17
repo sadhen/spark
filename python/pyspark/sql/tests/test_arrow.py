@@ -30,7 +30,7 @@ from pyspark.sql.types import StructType, StringType, IntegerType, LongType, \
     FloatType, DoubleType, DecimalType, DateType, TimestampType, BinaryType, StructField, \
     ArrayType, NullType
 from pyspark.testing.sqlutils import ReusedSQLTestCase, have_pandas, have_pyarrow, \
-    pandas_requirement_message, pyarrow_requirement_message
+    pandas_requirement_message, pyarrow_requirement_message, ExamplePoint, ExampleBox
 from pyspark.testing.utils import QuietTest
 
 if have_pandas:
@@ -189,6 +189,16 @@ class ArrowTests(ReusedSQLTestCase):
                     pdf_la_corrected[field.name] = _check_series_convert_timestamps_local_tz(
                         pdf_la_corrected[field.name], timezone)
             assert_frame_equal(pdf_ny, pdf_la_corrected)
+
+    def test_toPandas_using_udt(self):
+        df = self.spark.createDataFrame([ExamplePoint(1, 1), ExamplePoint(2, 2)])
+        print(df.schema)
+        pdf = df.toPandas()
+        print(pdf.columns)
+        df2 = self.spark.createDataFrame([(1, 1), (2, 2)])
+        print(df.schema)
+        pdf2 = df2.toPandas()
+        print(pdf2.columns)
 
     def test_pandas_round_trip(self):
         pdf = self.create_pandas_data_frame()
