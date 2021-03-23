@@ -175,12 +175,16 @@ class ArrowStreamPandasSerializer(ArrowStreamSerializer):
                 # Note: This can be removed once minimum pyarrow version is >= 0.16.1
                 s = s.astype(s.dtypes.categories.dtype)
 
+            import pyarrow
             try:
                 mask = s.isnull()
                 if t is not None and pa.types.is_list(t):
                     array = pa.StructArray.from_pandas(s, mask=mask, type=t, safe=self._safecheck)
                 else:
                     array = pa.Array.from_pandas(s, mask=mask, type=t, safe=self._safecheck)
+            except pyarrow.lib.ArrowTypeError as arrow_e:
+                print(f"---\ndt: {dt} t: {t} s: \n{s}\n---")
+                raise arrow_e
             except ValueError as e:
                 if self._safecheck:
                     error_msg = "Exception thrown when converting pandas.Series (%s) to " + \
