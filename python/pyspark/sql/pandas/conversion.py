@@ -454,7 +454,8 @@ class SparkConversionMixin(object):
 
         # Determine arrow types to coerce data when creating batches
         if isinstance(schema, StructType):
-            arrow_types = [to_arrow_type(f.dataType) for f in schema.fields]
+            # arrow_types = [to_arrow_type(f.dataType) for f in schema.fields]
+            arrow_types = [f.dataType for f in schema.fields]
         elif isinstance(schema, DataType):
             raise ValueError("Single data type %s is not supported with Arrow" % str(schema))
         else:
