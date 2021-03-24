@@ -30,7 +30,7 @@ from pyspark.sql.types import StructType, StringType, IntegerType, LongType, \
     FloatType, DoubleType, DecimalType, DateType, TimestampType, BinaryType, StructField, \
     ArrayType, NullType
 from pyspark.testing.sqlutils import ReusedSQLTestCase, have_pandas, have_pyarrow, \
-    pandas_requirement_message, pyarrow_requirement_message
+    pandas_requirement_message, pyarrow_requirement_message, ExamplePoint
 from pyspark.testing.utils import QuietTest
 
 if have_pandas:
@@ -195,6 +195,22 @@ class ArrowTests(ReusedSQLTestCase):
         df = self.spark.createDataFrame(self.data, schema=self.schema)
         pdf_arrow = df.toPandas()
         assert_frame_equal(pdf_arrow, pdf)
+
+    def test_udt_roundtrip_fallback_enabled(self):
+        with self.sql_conf({"spark.sql.execution.arrow.pyspark.fallback.enabled": True}):
+            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1, 1), ExamplePoint(2, 2)])})
+            df = self.spark.createDataFrame(pdf)
+            df.show()
+            pdf_arrow = df.toPandas()
+            assert_frame_equal(pdf_arrow, pdf)
+
+    def test_udt_roundtrip_fallback_disabled(self):
+        with self.sql_conf({"spark.sql.execution.arrow.pyspark.fallback.enabled": False}):
+            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1, 1), ExamplePoint(2, 2)])})
+            df = self.spark.createDataFrame(pdf)
+            df.show()
+            pdf_arrow = df.toPandas()
+            assert_frame_equal(pdf_arrow, pdf)
 
     def test_pandas_self_destruct(self):
         import pyarrow as pa
