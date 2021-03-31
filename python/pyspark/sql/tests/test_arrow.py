@@ -199,19 +199,17 @@ class ArrowTests(ReusedSQLTestCase):
 
     def test_udt_roundtrip_fallback_enabled(self):
         with self.sql_conf({"spark.sql.execution.arrow.pyspark.fallback.enabled": True}):
-            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1, 1), ExamplePoint(2, 2)])})
+            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1.0, 1.0), ExamplePoint(2.0, 2.0)])})
             schema = StructType([StructField('point', ExamplePointUDT(), False)])
             df = self.spark.createDataFrame(pdf, schema)
-            df.show()
             pdf_arrow = df.toPandas()
             assert_frame_equal(pdf_arrow, pdf)
 
     def test_udt_roundtrip_fallback_disabled(self):
         with self.sql_conf({"spark.sql.execution.arrow.pyspark.fallback.enabled": False}):
-            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1, 1), ExamplePoint(2, 2)])})
+            pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1.0, 1.0), ExamplePoint(2.0, 2.0)])})
             schema = StructType([StructField('point', ExamplePointUDT(), False)])
             df = self.spark.createDataFrame(pdf, schema)
-            df.show()
             pdf_arrow = df.toPandas()
             assert_frame_equal(pdf_arrow, pdf)
 
