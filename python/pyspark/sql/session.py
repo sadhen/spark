@@ -487,7 +487,7 @@ class SparkSession(SparkConversionMixin):
             return converter(obj)
         return verify_and_convert
 
-    def _createFromRDD(self, rdd, schema, samplingRatio, verifySchema):
+    def _createFromRDD(self, rdd, schema, verifySchema, samplingRatio):
         """
         Create an RDD for DataFrame from an existing RDD, returns the RDD and schema.
         """
@@ -704,7 +704,8 @@ class SparkSession(SparkConversionMixin):
             prepare = lambda obj: obj
 
         if isinstance(data, RDD):
-            rdd, schema = self._createFromRDD(data.map(prepare), schema, samplingRatio, verifySchema)
+            rdd, schema = self._createFromRDD(
+                data.map(prepare), schema, verifySchema, samplingRatio)
         else:
             rdd, schema = self._createFromLocal(map(prepare, data), schema, verifySchema)
         jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
