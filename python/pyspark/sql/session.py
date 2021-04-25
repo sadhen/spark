@@ -478,13 +478,22 @@ class SparkSession(SparkConversionMixin):
             schema = rdd.map(lambda row: _infer_schema(row, names)).reduce(_merge_type)
         return schema
 
-    def _createFromRDD(self, rdd, schema, samplingRatio):
+    def _create_verified_converter(self, schema, verifySchema):
+        converter = _create_converter(schema)
+        verify_func = _make_type_verifier(schema) if verifySchema else lambda _: True
+
+        def verify_and_convert(obj):
+            verify_func(obj)
+            return converter(obj)
+        return verify_and_convert
+
+    def _createFromRDD(self, rdd, schema, samplingRatio, verifySchema):
         """
         Create an RDD for DataFrame from an existing RDD, returns the RDD and schema.
         """
         if schema is None or isinstance(schema, (list, tuple)):
             struct = self._inferSchema(rdd, samplingRatio, names=schema)
-            converter = _create_converter(struct)
+            converter = self._create_verified_converter(struct, verifySchema)
             rdd = rdd.map(converter)
             if isinstance(schema, (list, tuple)):
                 for i, name in enumerate(schema):
@@ -499,7 +508,7 @@ class SparkSession(SparkConversionMixin):
         rdd = rdd.map(schema.toInternal)
         return rdd, schema
 
-    def _createFromLocal(self, data, schema):
+    def _createFromLocal(self, data, schema, verifySchema):
         """
         Create an RDD for DataFrame from a list or pandas.DataFrame, returns
         the RDD and schema.
@@ -510,7 +519,7 @@ class SparkSession(SparkConversionMixin):
 
         if schema is None or isinstance(schema, (list, tuple)):
             struct = self._inferSchemaFromList(data, names=schema)
-            converter = _create_converter(struct)
+            converter = self._create_verified_converter(struct, verifySchema)
             data = map(converter, data)
             if isinstance(schema, (list, tuple)):
                 for i, name in enumerate(schema):
@@ -695,9 +704,9 @@ class SparkSession(SparkConversionMixin):
             prepare = lambda obj: obj
 
         if isinstance(data, RDD):
-            rdd, schema = self._createFromRDD(data.map(prepare), schema, samplingRatio)
+            rdd, schema = self._createFromRDD(data.map(prepare), schema, samplingRatio, verifySchema)
         else:
-            rdd, schema = self._createFromLocal(map(prepare, data), schema)
+            rdd, schema = self._createFromLocal(map(prepare, data), schema, verifySchema)
         jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
         jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
         df = DataFrame(jdf, self._wrapped)
