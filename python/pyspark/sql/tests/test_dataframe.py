@@ -711,6 +711,7 @@ class DataFrameTests(ReusedSQLTestCase):
             time.tzset()
 
     # SPARK-35211: inferred schema verification
+    @unittest.skipIf(not have_pandas, pandas_requirement_message)  # type: ignore
     def test_create_dataframe_from_pandas_with_mismatched_udt(self):
         from pyspark.testing.sqlutils import ExamplePoint
         import pandas as pd
