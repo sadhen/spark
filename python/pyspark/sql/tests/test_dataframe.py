@@ -710,6 +710,21 @@ class DataFrameTests(ReusedSQLTestCase):
                 os.environ['TZ'] = orig_env_tz
             time.tzset()
 
+    # SPARK-35211: inferred schema verification
+    def test_create_dataframe_from_pandas_with_mismatched_udt(self):
+        from pyspark.testing.sqlutils import ExamplePoint
+        import pandas as pd
+        pdf = pd.DataFrame({'point': pd.Series([ExamplePoint(1, 1), ExamplePoint(2, 2)])})
+        # The underlying sqlType of ExamplePoint is ArrayType(DoubleType(), False)
+        # There is a data type mismatch between 1 and DoubleType, a TypeError is expected
+        with self.assertRaises(TypeError):
+            with self.sql_conf({"spark.sql.execution.arrow.pyspark.enabled": "false"}):
+                self.spark.createDataFrame(pdf)
+
+    def test_create_dataframe_with_mismatched_datatype(self):
+        with self.assertRaises(TypeError):
+            self.spark.createDataFrame([1, 2, 3], schema="a double")
+
     def test_repr_behaviors(self):
         import re
         pattern = re.compile(r'^ *\|', re.MULTILINE)
